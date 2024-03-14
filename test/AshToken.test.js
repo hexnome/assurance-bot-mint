@@ -101,7 +101,7 @@ describe("AshToken contract", function () {
             expect(await deployedToken.reflectionsTax()).to.equal(config.reflectionFee);
 
             // Check if burning tax equals 1.5%
-            expect(await deployedToken.burningTax()).to.equal(config.brunFee);
+            expect(await deployedToken.burningTax()).to.equal(config.burnFee);
 
         });
 
@@ -209,6 +209,24 @@ describe("AshToken contract", function () {
             expect(afterMarketingBal).to.equal(calcMarketingBal);
         
         });
+
+        // Transfer ASH via non-fee addresses - excluded from Fees
+        it("Should Claim Stuck tokens", async function () {
+            const tokenAddress = await deployedToken.getAddress()
+
+            // Get the ASH balance of tokenAddress before claiming
+            const beforeBal = await deployedToken.balanceOf(tokenAddress);
+
+            // Transfer ASH tokens from Sender to Receiver
+            const tx = await deployedToken.claimStuckTokens(tokenAddress);
+            await tx.wait();
+
+            // Get the ASH balance of tokenAddress after claiming
+            const afterBal = await deployedToken.balanceOf(tokenAddress);
+            // Check if all tokens are sent from tokenContract to Owner
+            expect(afterBal).to.equal(0n);
+        });
+
 
     });
 });
