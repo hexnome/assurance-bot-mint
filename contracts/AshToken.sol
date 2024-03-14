@@ -282,31 +282,32 @@ contract AshToken is ERC20, Ownable {
     uint256 public reflectionsTax = 25;     // 2.5% tax for Reflections :               2.5% = 25
     uint256 public burningTax = 15;         // 1.5% burning :                           1.5% = 15
 
-    uint256 public daoThrehold;
-    uint256 public marketingThrehold;
+    uint256 public daoThreshold;
+    uint256 public marketingThreshold;
 
     address public dexRouter;
     address public lpPair;
     address public DAO_ADDRESS;
     address public MARKETING_ADDRESS;
 
-    uint256 private constant MAX = ~uint256(0);
-    uint256 private constant _tTotal = 10 * 10**13 * 10**18;
-    uint256 private _rTotal = (MAX - (MAX % _tTotal));
-    uint256 private _tFeeTotal;
+    uint256 public constant MAX = ~uint256(0);
+    uint256 public constant _tTotal = 10 * 10**13 * 10**18;
+    uint256 public _rTotal = (MAX - (MAX % _tTotal));
+    uint256 public _tFeeTotal;
 
-    mapping (address => uint256) private _rOwned;
-    mapping (address => uint256) private _tOwned;
+    mapping (address => uint256) public _rOwned;
+    mapping (address => uint256) public _tOwned;
     mapping (address => bool) public isExcludedFromFees;
     mapping (address => bool) public automatedMarketMakerPairs;
 
-    bool private inSwapAndLiquify;
+    bool public inSwapAndLiquify;
 
     event ExcludeFromFees(address indexed account, bool indexed value);
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
     event SetDAOFundAddress(address indexed daoAddress);
     event SetMarketingAddress(address indexed marketingAddress);
     event SetBuySellTax(uint256 buyTax, uint256 sellTax);
+    event SetThreshold(uint256 daoThreshold, uint256 marketingThreshold);
     event SwapAndEvolve(uint256 ashSwapped, uint256 bnbReceived, uint256 ashIntoLiquidity);
 
     constructor(
@@ -324,7 +325,7 @@ contract AshToken is ERC20, Ownable {
         } else if (block.chainid == 97) {
             // bsc testnet
             wbnb = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd;          // WETH
-            dexRouter = 0x9a489505a00cE272eAa5e07Dba6491314CaE3796;     // PCS V2
+            dexRouter = 0xD99D1c33F9fC3444f8101754aBC46c52416550D1;     // PCS V2
         } else if (block.chainid == 5) {
             wbnb = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;          // WETH
             dexRouter = 0x9a489505a00cE272eAa5e07Dba6491314CaE3796;     // PCS V2
@@ -339,6 +340,12 @@ contract AshToken is ERC20, Ownable {
             wbnb
         );
 
+        buyTax = 80;
+        sellTax = 80;
+
+        daoThreshold = 1000 * 10**18;
+        marketingThreshold = 1000 * 10**18;
+
         isExcludedFromFees[msg.sender] = true;
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[address(0xdead)] = true;
@@ -346,7 +353,7 @@ contract AshToken is ERC20, Ownable {
         DAO_ADDRESS = _daoAddress; // Set the DAO Fund address
         MARKETING_ADDRESS = _marketingAddress; // Set the Marketing/Operations address
 
-        _mint(msg.sender, 10000000000000 * (10 ** uint256(decimals())));
+        _rOwned[msg.sender] = _rTotal;
     }
 
     modifier lockTheSwap() {
@@ -388,13 +395,34 @@ contract AshToken is ERC20, Ownable {
         else if (automatedMarketMakerPairs[recipient]) feeAmount = sellTax;
         else feeAmount = transferTax;
 
-        if (inSwapAndLiquify) feeAmount = 0;
-            
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee) = _getValues(amount, feeAmount);
+        if (inSwapAndLiquify || !takeFee) feeAmount = 0;
+           
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tDao, uint256 tMarketing, uint256 tLiquidity, uint256 tBurning) = _getValues(amount, feeAmount);
+        
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount); 
-        _takeFees(sender, feeAmount);      
-        _reflectFee(rFee, tFee);
+
+        if (feeAmount > 0) {
+            if (balanceOf(DAO_ADDRESS) + tDao > daoThreshold) {
+                _takeFee(sender, tDao, address(this));
+                swapTokensForBnb(tDao, DAO_ADDRESS); 
+            } else {
+                _takeFee(sender, tDao, DAO_ADDRESS);
+            }
+        
+            if (balanceOf(MARKETING_ADDRESS) + tMarketing > marketingThreshold) {
+                _takeFee(sender, tMarketing, address(this));
+                swapTokensForBnb(tMarketing, MARKETING_ADDRESS); 
+            } else {
+                _takeFee(sender, tMarketing, MARKETING_ADDRESS);
+            }
+    
+            _takeFee(sender, tLiquidity, address(this));
+            _takeBurn(sender, tBurning);
+
+            _reflectFee(rFee, tFee);
+        }
+
 
         emit Transfer(sender, recipient, tTransferAmount);
 
@@ -460,31 +488,6 @@ contract AshToken is ERC20, Ownable {
         );
     }
 
-    function _takeFees(
-        address sender,
-        uint256 feeAmount
-    ) private {
-        uint256 daoFee = feeAmount.mul(daoFundTax).div(1000);
-        uint256 marketingFee = feeAmount.mul(marketingTax).div(1000);
-
-        if (balanceOf(DAO_ADDRESS) + daoFee > daoThrehold) {
-            _takeFee(sender, daoFee, address(this));
-            swapTokensForBnb(daoFee, DAO_ADDRESS); 
-        } else {
-            _takeFee(sender, daoFee, DAO_ADDRESS);
-        }
-
-        if (balanceOf(MARKETING_ADDRESS) + marketingFee > marketingThrehold) {
-            _takeFee(sender, marketingFee, address(this));
-            swapTokensForBnb(marketingFee, MARKETING_ADDRESS); 
-        } else {
-            _takeFee(sender, marketingFee, MARKETING_ADDRESS);
-        }
-
-        _takeFee(sender, feeAmount.mul(liquidityTax).div(1000), address(this));
-        _takeBurn(sender, feeAmount.mul(burningTax).div(1000));
-    }
-
     function _takeFee(
         address sender,
         uint256 tAmount,
@@ -514,23 +517,38 @@ contract AshToken is ERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-     function _getValues(uint256 tAmount, uint256 feeAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount, feeAmount);
+     function _getValues(uint256 tAmount, uint256 feeAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+        (uint256 tTransferAmount, uint256 tDao, uint256 tMarketing, uint256 tLiquidity, uint256 tFee, uint256 tBurning) = _getTValues(tAmount, feeAmount);
         uint256 currentRate =  _getRate();
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, currentRate);
-        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tDao, tMarketing, tLiquidity, tFee, tBurning, currentRate);
+        return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tDao, tMarketing, tLiquidity, tBurning);
     }
 
-    function _getTValues(uint256 tAmount, uint256 feeAmount) private pure returns (uint256, uint256) {
-        uint256 tFee = tAmount.mul(feeAmount).div(1000);
-        uint256 tTransferAmount = tAmount.sub(tFee);
-        return (tTransferAmount, tFee);
+    function _getTValues(uint256 tAmount, uint256 feeAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+        uint256 transFee = tAmount.mul(feeAmount).div(1000);
+
+        uint256 tDao = transFee.mul(daoFundTax).div(1000);
+        uint256 tMarketing = transFee.mul(marketingTax).div(1000);
+        uint256 tLiquidity = transFee.mul(liquidityTax).div(1000);
+        uint256 tFee = transFee.mul(reflectionsTax).div(1000);
+        uint256 tBurning = transFee.mul(burningTax).div(1000);
+
+        uint256 tTransferAmount = tAmount.sub(transFee);
+
+        return (tTransferAmount, tDao, tMarketing, tLiquidity, tFee, tBurning);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
+    function _getRValues(uint256 tAmount, uint256 tDao, uint256 tMarketing, uint256 tLiquidity, uint256 tFee, uint256 tBurning, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
+
+        uint256 rDao = tDao.mul(currentRate);
+        uint256 rMarketing = tMarketing.mul(currentRate);
+        uint256 rLiquidity = tLiquidity.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
-        uint256 rTransferAmount = rAmount.sub(rFee);
+        uint256 rBurning = tBurning.mul(currentRate);
+
+        uint256 rTransferAmount = rAmount.sub(rDao).sub(rMarketing).sub(rLiquidity).sub(rFee).sub(rBurning);
+
         return (rAmount, rTransferAmount, rFee);
     }
 
@@ -594,8 +612,18 @@ contract AshToken is ERC20, Ownable {
         emit SetMarketingAddress(_address);
     }
 
+    function setThreshold(uint256 _daoThreshold, uint256 _marketingThreshold) external onlyOwner {
+        require(_daoThreshold > 0 && _marketingThreshold > 100, "Should over 0");
+
+        daoThreshold = _daoThreshold;
+        marketingThreshold = _marketingThreshold;
+
+        emit SetThreshold(_daoThreshold, _marketingThreshold);
+
+    }
+
     function setTax(uint256 _buyTax, uint256 _sellTax) external onlyOwner {
-        require(_buyTax <= 10 || _sellTax <= 10, "Cannot exceed maximum tax of 10%");
+        require(_buyTax <= 100 && _sellTax <= 100, "Cannot exceed maximum tax of 10%");
 
         buyTax = _buyTax;
         sellTax = _sellTax;
