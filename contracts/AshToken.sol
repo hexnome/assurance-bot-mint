@@ -307,6 +307,7 @@ contract AshToken is ERC20, Ownable {
     event SetDAOFundAddress(address indexed daoAddress);
     event SetMarketingAddress(address indexed marketingAddress);
     event SetBuySellTax(uint256 buyTax, uint256 sellTax);
+    event SetTransferTax(uint256 transferTax);
     event SetThreshold(uint256 daoThreshold, uint256 marketingThreshold);
     event SwapAndEvolve(uint256 ashSwapped, uint256 bnbReceived, uint256 ashIntoLiquidity);
 
@@ -613,13 +614,22 @@ contract AshToken is ERC20, Ownable {
     }
 
     function setThreshold(uint256 _daoThreshold, uint256 _marketingThreshold) external onlyOwner {
-        require(_daoThreshold > 0 && _marketingThreshold > 100, "Should over 0");
+        require(_daoThreshold > 0 && _marketingThreshold > 0, "Should over 0");
 
         daoThreshold = _daoThreshold;
         marketingThreshold = _marketingThreshold;
 
         emit SetThreshold(_daoThreshold, _marketingThreshold);
 
+    }
+
+    
+    function setTransferTax(uint256 _transferTax) external onlyOwner {
+        require(_transferTax <= 100, "Cannot exceed maximum tax of 10%");
+
+        transferTax = _transferTax;
+
+        emit SetTransferTax(_transferTax);
     }
 
     function setTax(uint256 _buyTax, uint256 _sellTax) external onlyOwner {
