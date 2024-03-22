@@ -29,8 +29,8 @@ describe("AshToken contract", function () {
         initialLiquidityBNB: 2000000000000000n,
         testTransferAmount: 50000000000000000000n,
         testFeeTransferAmount: 10000000000000000000n,
-        daoAddress: "0xf3950787C0B81D3bF6C5A4f0c155A69A46fD924b",
-        marketingAddress: "0xc056928cD87627E8B6eec4a613c0d1418E6e743D",
+        daoAddress: "0x73A71240E5Ca0F1ABa08e6Ec081a81064209bC7A",
+        marketingAddress: "0x092fe11a9B2a54a704E74c6AB2005efcf1e84215",
         routerAddress: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
         wbnb: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"
 
@@ -49,7 +49,7 @@ describe("AshToken contract", function () {
         // To deploy our contract, we just have to call ethers.deployContract and await
         // its waitForDeployment() method, which happens once its transaction has been
         // mined.
-        const hardhatToken = await ethers.deployContract("AshToken", [config.daoAddress, config.marketingAddress]);
+        const hardhatToken = await ethers.deployContract("AshToken");
         
         await hardhatToken.waitForDeployment();
         console.log("=========Deployed Successfully=========")
@@ -167,7 +167,7 @@ describe("AshToken contract", function () {
 
             // Get the ASH balance of Sender before transferring
             const beforeSenderBal = await deployedToken.balanceOf(addr2.address);
-        
+            
             // Transfer ASH tokens from Sender to Receiver
             const tx = await deployedToken.connect(addr2).transfer(addr1.address, config.testFeeTransferAmount);
             await tx.wait();
@@ -218,7 +218,7 @@ describe("AshToken contract", function () {
             const beforeBal = await deployedToken.balanceOf(tokenAddress);
 
             // Transfer ASH tokens from Sender to Receiver
-            const tx = await deployedToken.claimStuckTokens(tokenAddress);
+            const tx = await deployedToken.claimTokens(tokenAddress);
             await tx.wait();
 
             // Get the ASH balance of tokenAddress after claiming

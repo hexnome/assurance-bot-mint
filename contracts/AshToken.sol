@@ -267,31 +267,36 @@ interface IDexFactory {
     ) external returns (address pair);
 }
 
+interface IDexPair {
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function token0() external view returns (address);
+}
+
 contract AshToken is ERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
-    uint256 public maxTax = 100;            // 10% maximum tax :                        10% = 100
+    uint256 public constant maxTax = 100;            // 10% maximum tax :                        10% = 100
     uint256 public buyTax;
     uint256 public sellTax;
 
     uint256 public transferTax = 100;       // 10% Distribution tax :                   10% = 100
-    uint256 public daoFundTax = 800;        // 80% tax for DAO Fund :                   80% = 800
-    uint256 public marketingTax = 135;      // 13.5% tax for Marketing/Operations :     13.5% = 135
-    uint256 public liquidityTax = 25;       // 2.5% tax for Liquidity Pool :            2.5% = 25
-    uint256 public reflectionsTax = 25;     // 2.5% tax for Reflections :               2.5% = 25
-    uint256 public burningTax = 15;         // 1.5% burning :                           1.5% = 15
+    uint256 public constant daoFundTax = 800;        // 80% tax for DAO Fund :                   80% = 800
+    uint256 public constant marketingTax = 135;      // 13.5% tax for Marketing/Operations :     13.5% = 135
+    uint256 public constant liquidityTax = 25;       // 2.5% tax for Liquidity Pool :            2.5% = 25
+    uint256 public constant reflectionsTax = 25;     // 2.5% tax for Reflections :               2.5% = 25
+    uint256 public constant burningTax = 15;         // 1.5% burning :                           1.5% = 15
 
     uint256 public daoThreshold;
     uint256 public marketingThreshold;
 
-    address public dexRouter;
-    address public lpPair;
-    address public DAO_ADDRESS;
-    address public MARKETING_ADDRESS;
+    address public immutable dexRouter;
+    address public immutable lpPair;
+    address public immutable DAO_ADDRESS;
+    address public immutable MARKETING_ADDRESS;
 
     uint256 public constant MAX = ~uint256(0);
-    uint256 public constant _tTotal = 10 * 10**13 * 10**18;
+    uint256 public constant _tTotal = 10 * 10**12 * 10**18;
     uint256 public _rTotal = (MAX - (MAX % _tTotal));
     uint256 public _tFeeTotal;
 
@@ -304,41 +309,38 @@ contract AshToken is ERC20, Ownable {
 
     event ExcludeFromFees(address indexed account, bool indexed value);
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
-    event SetDAOFundAddress(address indexed daoAddress);
-    event SetMarketingAddress(address indexed marketingAddress);
     event SetBuySellTax(uint256 buyTax, uint256 sellTax);
     event SetTransferTax(uint256 transferTax);
     event SetThreshold(uint256 daoThreshold, uint256 marketingThreshold);
     event SwapAndEvolve(uint256 ashSwapped, uint256 bnbReceived, uint256 ashIntoLiquidity);
 
     constructor(
-        address _daoAddress,
-        address _marketingAddress
     ) ERC20("Ash Token", "ASH") Ownable(msg.sender) {
 
-        address wbnb;
+        address _wbnb;
+        address _dexRouter;
 
         if (block.chainid == 56) {
             // bsc mainnet
-            wbnb = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;          // WETH
-            dexRouter = 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4;     // PCS V2
+            _wbnb = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;          // WETH
+            _dexRouter = 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4;     // PCS V2
             // dexRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E;     // PCS V3
         } else if (block.chainid == 97) {
             // bsc testnet
-            wbnb = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd;          // WETH
-            dexRouter = 0xD99D1c33F9fC3444f8101754aBC46c52416550D1;     // PCS V2
+            _wbnb = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd;          // WETH
+            _dexRouter = 0xD99D1c33F9fC3444f8101754aBC46c52416550D1;     // PCS V2
         } else if (block.chainid == 5) {
-            wbnb = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;          // WETH
-            dexRouter = 0x9a489505a00cE272eAa5e07Dba6491314CaE3796;     // PCS V2
+            _wbnb = 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;          // WETH
+            _dexRouter = 0x9a489505a00cE272eAa5e07Dba6491314CaE3796;     // PCS V2
 
         } else {
             revert("Chain not configured");
         }
 
         // Create Pair
-        lpPair = IDexFactory(IDexRouter(dexRouter).factory()).createPair(
+        lpPair = IDexFactory(IDexRouter(_dexRouter).factory()).createPair(
             address(this),
-            wbnb
+            _wbnb
         );
 
         buyTax = 80;
@@ -351,10 +353,13 @@ contract AshToken is ERC20, Ownable {
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[address(0xdead)] = true;
 
-        DAO_ADDRESS = _daoAddress; // Set the DAO Fund address
-        MARKETING_ADDRESS = _marketingAddress; // Set the Marketing/Operations address
+        dexRouter = _dexRouter;
+        DAO_ADDRESS = 0x73A71240E5Ca0F1ABa08e6Ec081a81064209bC7A;           // Set the DAO Fund address
+        MARKETING_ADDRESS = 0x092fe11a9B2a54a704E74c6AB2005efcf1e84215;     // Set the Marketing/Operations address
 
         _rOwned[msg.sender] = _rTotal;
+
+        emit Transfer(address(0), msg.sender, _tTotal);
     }
 
     modifier lockTheSwap() {
@@ -404,20 +409,41 @@ contract AshToken is ERC20, Ownable {
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount); 
 
         if (feeAmount > 0) {
+            address _daoReceiver;
+            address _marketReceiver;
+
+            uint256 _tDao;
+            uint256 _tMarketing;
+
             if (balanceOf(DAO_ADDRESS) + tDao > daoThreshold) {
-                _takeFee(sender, tDao, address(this));
-                swapTokensForBnb(tDao, DAO_ADDRESS); 
+                _daoReceiver = address(this);
+                _tDao = tDao;
             } else {
-                _takeFee(sender, tDao, DAO_ADDRESS);
+                _daoReceiver = DAO_ADDRESS;
             }
+            _takeFee(sender, tDao, _daoReceiver);
         
             if (balanceOf(MARKETING_ADDRESS) + tMarketing > marketingThreshold) {
-                _takeFee(sender, tMarketing, address(this));
-                swapTokensForBnb(tMarketing, MARKETING_ADDRESS); 
+                _marketReceiver = address(this);
+                _tMarketing = tMarketing;
             } else {
-                _takeFee(sender, tMarketing, MARKETING_ADDRESS);
+                _marketReceiver = MARKETING_ADDRESS;
+            }    
+            _takeFee(sender, tMarketing, _marketReceiver);
+
+            if (_tDao + _tMarketing > 0) {
+                uint256 beforeBalance = address(this).balance;
+                swapTokensForBnb(_tDao + _tMarketing, address(this)); 
+                uint256 afterBalance = address(this).balance;
+
+                uint256 _bnbBalance = afterBalance - beforeBalance;
+                uint256 _daoBalance = _bnbBalance.mul(_tDao).div(_tDao + _tMarketing);
+
+                payable(DAO_ADDRESS).transfer(_daoBalance);
+                payable(MARKETING_ADDRESS).transfer(_bnbBalance - _daoBalance);
+
             }
-    
+
             _takeFee(sender, tLiquidity, address(this));
             _takeBurn(sender, tBurning);
 
@@ -434,6 +460,13 @@ contract AshToken is ERC20, Ownable {
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = IDexRouter(dexRouter).WETH();
+
+        IDexPair dexPair = IDexPair(lpPair);
+        (uint256 reserve0, uint256 reserve1, ) = dexPair.getReserves();
+        uint256 reserveIn = dexPair.token0() == address(this) ? reserve0 : reserve1;
+
+        uint256 maxSellable = (reserveIn * 1) / 100;                    // Assuming a 1% maximum sellable limit
+        require(tokenAmount <= maxSellable, "Exceeds maximum sellable amount");
 
         _approve(address(this), address(dexRouter), tokenAmount);
 
@@ -525,14 +558,14 @@ contract AshToken is ERC20, Ownable {
         return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tDao, tMarketing, tLiquidity, tBurning);
     }
 
-    function _getTValues(uint256 tAmount, uint256 feeAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+    function _getTValues(uint256 tAmount, uint256 feeAmount) private pure returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         uint256 transFee = tAmount.mul(feeAmount).div(1000);
 
         uint256 tDao = transFee.mul(daoFundTax).div(1000);
         uint256 tMarketing = transFee.mul(marketingTax).div(1000);
         uint256 tLiquidity = transFee.mul(liquidityTax).div(1000);
         uint256 tFee = transFee.mul(reflectionsTax).div(1000);
-        uint256 tBurning = transFee.mul(burningTax).div(1000);
+        uint256 tBurning = transFee.sub(tDao).sub(tMarketing).sub(tLiquidity).sub(tFee);
 
         uint256 tTransferAmount = tAmount.sub(transFee);
 
@@ -568,7 +601,7 @@ contract AshToken is ERC20, Ownable {
 
 
 
-    function claimStuckTokens(address _token) external onlyOwner {
+    function claimTokens(address _token) external onlyOwner {
         IERC20 token = IERC20(_token);
         token.transfer(owner(), token.balanceOf(address(this)));
     }
@@ -593,26 +626,6 @@ contract AshToken is ERC20, Ownable {
         emit SetAutomatedMarketMakerPair(pair, value);
     }
     
-    function setDAOFundAddress(address _address) external onlyOwner {
-        require(
-            _address != address(0),
-            "DAO Fund Address should be non-zero address"
-        );
-        DAO_ADDRESS = _address;
-
-        emit SetDAOFundAddress(_address);
-    }
-
-    function setMarketingAddress(address _address) external onlyOwner {
-        require(
-            _address != address(0),
-            "Marketing Address should be non-zero address"
-        );
-        MARKETING_ADDRESS = _address;
-
-        emit SetMarketingAddress(_address);
-    }
-
     function setThreshold(uint256 _daoThreshold, uint256 _marketingThreshold) external onlyOwner {
         require(_daoThreshold > 0 && _marketingThreshold > 0, "Should over 0");
 
@@ -625,7 +638,7 @@ contract AshToken is ERC20, Ownable {
 
     
     function setTransferTax(uint256 _transferTax) external onlyOwner {
-        require(_transferTax <= 100, "Cannot exceed maximum tax of 10%");
+        require(_transferTax <= maxTax, "Cannot exceed maximum tax of 10%");
 
         transferTax = _transferTax;
 
@@ -633,7 +646,7 @@ contract AshToken is ERC20, Ownable {
     }
 
     function setTax(uint256 _buyTax, uint256 _sellTax) external onlyOwner {
-        require(_buyTax <= 100 && _sellTax <= 100, "Cannot exceed maximum tax of 10%");
+        require(_buyTax <= maxTax && _sellTax <= maxTax, "Cannot exceed maximum tax of 10%");
 
         buyTax = _buyTax;
         sellTax = _sellTax;
