@@ -5,204 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        uint256 c = a + b;
-        if (c < a) return (false, 0);
-        return (true, c);
-    }
-
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b > a) return (false, 0);
-        return (true, a - b);
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) return (true, 0);
-        uint256 c = a * b;
-        if (c / a != b) return (false, 0);
-        return (true, c);
-    }
-
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a / b);
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a % b);
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-        return c;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) return 0;
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: division by zero");
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: modulo by zero");
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryDiv}.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        return a % b;
-    }
-}
-
 interface IDexRouter {
     function factory() external pure returns (address);
 
@@ -273,20 +75,20 @@ interface IDexPair {
 }
 
 contract AshToken is ERC20, Ownable {
-    using SafeMath for uint256;
     using Address for address;
 
     uint256 public constant maxTax = 100;            // 10% maximum tax :                        10% = 100
     uint256 public buyTax;
     uint256 public sellTax;
 
-    uint256 public transferTax = 100;       // 10% Distribution tax :                   10% = 100
+    uint256 public transferTax = 100;                // 10% Distribution tax :                   10% = 100
     uint256 public constant daoFundTax = 800;        // 80% tax for DAO Fund :                   80% = 800
     uint256 public constant marketingTax = 135;      // 13.5% tax for Marketing/Operations :     13.5% = 135
     uint256 public constant liquidityTax = 25;       // 2.5% tax for Liquidity Pool :            2.5% = 25
     uint256 public constant reflectionsTax = 25;     // 2.5% tax for Reflections :               2.5% = 25
     uint256 public constant burningTax = 15;         // 1.5% burning :                           1.5% = 15
 
+    uint256 public maxSellablePercent;
     uint256 public daoThreshold;
     uint256 public marketingThreshold;
 
@@ -296,23 +98,27 @@ contract AshToken is ERC20, Ownable {
     address public immutable MARKETING_ADDRESS;
 
     uint256 public constant MAX = ~uint256(0);
-    uint256 public constant _tTotal = 10 * 10**12 * 10**18;
-    uint256 public _rTotal = (MAX - (MAX % _tTotal));
-    uint256 public _tFeeTotal;
+    uint256 public constant tTotal = 10 * 10**12 * 10**18;
+    uint256 public rTotal = (MAX - (MAX % tTotal));
+    uint256 public tFeeTotal;
 
-    mapping (address => uint256) public _rOwned;
-    mapping (address => uint256) public _tOwned;
+    mapping (address => uint256) public rOwned;
+    mapping (address => uint256) public tOwned;
     mapping (address => bool) public isExcludedFromFees;
     mapping (address => bool) public automatedMarketMakerPairs;
 
     bool public inSwapAndLiquify;
+    bool public isStop;
 
     event ExcludeFromFees(address indexed account, bool indexed value);
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
+    event ClaimTokens(address indexed token, uint256 amount);
     event SetBuySellTax(uint256 buyTax, uint256 sellTax);
     event SetTransferTax(uint256 transferTax);
     event SetThreshold(uint256 daoThreshold, uint256 marketingThreshold);
+    event SetMaxSellablePercent(uint256 newPercent);
     event SwapAndEvolve(uint256 ashSwapped, uint256 bnbReceived, uint256 ashIntoLiquidity);
+    event SetTriggerTransfer(bool isStopped);
 
     constructor(
     ) ERC20("Ash Token", "ASH") Ownable(msg.sender) {
@@ -346,20 +152,24 @@ contract AshToken is ERC20, Ownable {
         buyTax = 80;
         sellTax = 80;
 
-        daoThreshold = 1000 * 10**18;
-        marketingThreshold = 1000 * 10**18;
+        maxSellablePercent = 100;
+
+        daoThreshold = 10**8 * 10**18;
+        marketingThreshold = 5 * 10**7 * 10**18;
 
         isExcludedFromFees[msg.sender] = true;
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[address(0xdead)] = true;
 
+        isStop = false;
+
         dexRouter = _dexRouter;
         DAO_ADDRESS = 0x73A71240E5Ca0F1ABa08e6Ec081a81064209bC7A;           // Set the DAO Fund address
         MARKETING_ADDRESS = 0x092fe11a9B2a54a704E74c6AB2005efcf1e84215;     // Set the Marketing/Operations address
 
-        _rOwned[msg.sender] = _rTotal;
+        rOwned[msg.sender] = rTotal;
 
-        emit Transfer(address(0), msg.sender, _tTotal);
+       emit Transfer(address(0), msg.sender, tTotal);
     }
 
     modifier lockTheSwap() {
@@ -368,23 +178,28 @@ contract AshToken is ERC20, Ownable {
         inSwapAndLiquify = false;
     }
 
+    modifier stopped() {
+        require(isStop == false, "Can not transfer");
+        _;
+    }
+
     function totalSupply() public pure override returns (uint256) {
-        return _tTotal;
+        return tTotal;
     }
 
     function balanceOf(address account) public view override returns (uint256) {
-        return tokenFromReflection(_rOwned[account]);
+        return tokenFromReflection(rOwned[account]);
     }
 
     receive() external payable {}
 
     function tokenFromReflection(uint256 rAmount) public view returns (uint256) {
-        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        require(rAmount <= rTotal, "Amount must be less than total reflections");
         uint256 currentRate = _getRate();
-        return rAmount.div(currentRate);
+        return rAmount/currentRate;
     }
 
-    function _update(address sender, address recipient, uint256 amount) internal virtual override {
+    function _update(address sender, address recipient, uint256 amount) internal virtual override stopped {
         require(amount > 0, "Transfer amount must be greater than zero");
 
         //indicates if fee should be deducted from transfer
@@ -405,8 +220,8 @@ contract AshToken is ERC20, Ownable {
            
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tDao, uint256 tMarketing, uint256 tLiquidity, uint256 tBurning) = _getValues(amount, feeAmount);
         
-        _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount); 
+        rOwned[sender] = rOwned[sender] - rAmount;
+        rOwned[recipient] = rOwned[recipient] + rTransferAmount; 
 
         if (feeAmount > 0) {
             address _daoReceiver;
@@ -415,7 +230,7 @@ contract AshToken is ERC20, Ownable {
             uint256 _tDao;
             uint256 _tMarketing;
 
-            if (balanceOf(DAO_ADDRESS) + tDao > daoThreshold) {
+            if (balanceOf(DAO_ADDRESS) + tDao > daoThreshold && !automatedMarketMakerPairs[sender]) {
                 _daoReceiver = address(this);
                 _tDao = tDao;
             } else {
@@ -423,7 +238,7 @@ contract AshToken is ERC20, Ownable {
             }
             _takeFee(sender, tDao, _daoReceiver);
         
-            if (balanceOf(MARKETING_ADDRESS) + tMarketing > marketingThreshold) {
+            if (balanceOf(MARKETING_ADDRESS) + tMarketing > marketingThreshold && !automatedMarketMakerPairs[sender]) {
                 _marketReceiver = address(this);
                 _tMarketing = tMarketing;
             } else {
@@ -437,7 +252,7 @@ contract AshToken is ERC20, Ownable {
                 uint256 afterBalance = address(this).balance;
 
                 uint256 _bnbBalance = afterBalance - beforeBalance;
-                uint256 _daoBalance = _bnbBalance.mul(_tDao).div(_tDao + _tMarketing);
+                uint256 _daoBalance = _bnbBalance * _tDao/(_tDao + _tMarketing);
 
                 payable(DAO_ADDRESS).transfer(_daoBalance);
                 payable(MARKETING_ADDRESS).transfer(_bnbBalance - _daoBalance);
@@ -465,7 +280,7 @@ contract AshToken is ERC20, Ownable {
         (uint256 reserve0, uint256 reserve1, ) = dexPair.getReserves();
         uint256 reserveIn = dexPair.token0() == address(this) ? reserve0 : reserve1;
 
-        uint256 maxSellable = (reserveIn * 1) / 100;                    // Assuming a 1% maximum sellable limit
+        uint256 maxSellable = (reserveIn * maxSellablePercent) / 1000;                    // Assuming a 15% maximum sellable limit
         require(tokenAmount <= maxSellable, "Exceeds maximum sellable amount");
 
         _approve(address(this), address(dexRouter), tokenAmount);
@@ -485,8 +300,8 @@ contract AshToken is ERC20, Ownable {
         uint256 contractAshBalance = balanceOf(address(this));
         // require(contractAshBalance >= numOfAshToSwapAndEvolve, "ASH balance is not reach for S&E Threshold");
 
-        uint256 half = contractAshBalance.div(2);
-        uint256 otherHalf = contractAshBalance.sub(half);
+        uint256 half = contractAshBalance/2;
+        uint256 otherHalf = contractAshBalance - half;
 
         // capture the contract's current BNB balance.
         // this is so that we can capture exactly the amount of BNB that the
@@ -499,7 +314,7 @@ contract AshToken is ERC20, Ownable {
 
         // how much BNB did we just swap into?
         uint256 newBalance = address(this).balance;
-        uint256 swapeedBNB = newBalance.sub(initialBalance);
+        uint256 swapeedBNB = newBalance - initialBalance;
 
         // add liquidity to Pancakeswap
         addLiquidity(otherHalf, swapeedBNB);
@@ -531,24 +346,24 @@ contract AshToken is ERC20, Ownable {
         if (tAmount == 0) return;
 
         uint256 currentRate = _getRate();
-        uint256 rAmount = tAmount.mul(currentRate);
-        _rOwned[recipient] = _rOwned[recipient].add(rAmount);
+        uint256 rAmount = tAmount*currentRate;
+        rOwned[recipient] = rOwned[recipient]+rAmount;
 
         emit Transfer(sender, recipient, tAmount);
     }
 
     function _takeBurn(address sender, uint256 _amount) private {
         if (_amount == 0) return;
-        _tOwned[address(0xdead)] = _tOwned[address(0xdead)].add(_amount);
+        tOwned[address(0xdead)] = tOwned[address(0xdead)]+_amount;
         uint256 _rAmount = _amount * _getRate();
-        _rOwned[address(0xdead)] = _rOwned[address(0xdead)].add(_rAmount);
+        rOwned[address(0xdead)] = rOwned[address(0xdead)]+_rAmount;
         
         emit Transfer(sender, address(0xdead), _amount);
     }
     
     function _reflectFee(uint256 rFee, uint256 tFee) private {
-        _rTotal = _rTotal.sub(rFee);
-        _tFeeTotal = _tFeeTotal.add(tFee);
+        rTotal = rTotal - rFee;
+        tFeeTotal= tFeeTotal + tFee;
     }
 
      function _getValues(uint256 tAmount, uint256 feeAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
@@ -559,51 +374,55 @@ contract AshToken is ERC20, Ownable {
     }
 
     function _getTValues(uint256 tAmount, uint256 feeAmount) private pure returns (uint256, uint256, uint256, uint256, uint256, uint256) {
-        uint256 transFee = tAmount.mul(feeAmount).div(1000);
+        uint256 transFee = tAmount * feeAmount;
 
-        uint256 tDao = transFee.mul(daoFundTax).div(1000);
-        uint256 tMarketing = transFee.mul(marketingTax).div(1000);
-        uint256 tLiquidity = transFee.mul(liquidityTax).div(1000);
-        uint256 tFee = transFee.mul(reflectionsTax).div(1000);
-        uint256 tBurning = transFee.sub(tDao).sub(tMarketing).sub(tLiquidity).sub(tFee);
+        uint256 tDao = transFee*daoFundTax/1000000;
+        uint256 tMarketing = transFee*marketingTax/1000000;
+        uint256 tLiquidity = transFee*liquidityTax/1000000;
+        uint256 tFee = transFee*reflectionsTax/1000000;
+        uint256 tBurning = transFee/1000 - tDao - tMarketing - tLiquidity - tFee;
 
-        uint256 tTransferAmount = tAmount.sub(transFee);
+        uint256 tTransferAmount = tAmount - transFee/1000;
 
         return (tTransferAmount, tDao, tMarketing, tLiquidity, tFee, tBurning);
     }
 
     function _getRValues(uint256 tAmount, uint256 tDao, uint256 tMarketing, uint256 tLiquidity, uint256 tFee, uint256 tBurning, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
-        uint256 rAmount = tAmount.mul(currentRate);
+        uint256 rAmount = tAmount*currentRate;
 
-        uint256 rDao = tDao.mul(currentRate);
-        uint256 rMarketing = tMarketing.mul(currentRate);
-        uint256 rLiquidity = tLiquidity.mul(currentRate);
-        uint256 rFee = tFee.mul(currentRate);
-        uint256 rBurning = tBurning.mul(currentRate);
+        uint256 rDao = tDao*currentRate;
+        uint256 rMarketing = tMarketing*currentRate;
+        uint256 rLiquidity = tLiquidity*currentRate;
+        uint256 rFee = tFee*currentRate;
+        uint256 rBurning = tBurning*currentRate;
 
-        uint256 rTransferAmount = rAmount.sub(rDao).sub(rMarketing).sub(rLiquidity).sub(rFee).sub(rBurning);
+        uint256 rTransferAmount = rAmount - rDao - rMarketing - rLiquidity - rFee - rBurning;
 
         return (rAmount, rTransferAmount, rFee);
     }
 
     function _getRate() private view returns(uint256) {
         (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
-        return rSupply.div(tSupply);
+        return rSupply/tSupply;
     }
 
     function _getCurrentSupply() private view returns (uint256, uint256) {
-        uint256 rSupply = _rTotal;
-        uint256 tSupply = _tTotal;      
+        uint256 rSupply = rTotal;
+        uint256 tSupply = tTotal;      
        
-        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+        if (rSupply < rTotal/tTotal) return (rTotal, tTotal);
         return (rSupply, tSupply);
-    }
+   }
 
 
 
     function claimTokens(address _token) external onlyOwner {
         IERC20 token = IERC20(_token);
-        token.transfer(owner(), token.balanceOf(address(this)));
+        bool success = token.transfer(owner(), token.balanceOf(address(this)));
+
+        if (success) {
+            emit ClaimTokens(_token, token.balanceOf(address(this)));
+        }
     }
 
     function excludeFromFees(address account, bool excluded) public onlyOwner {
@@ -636,7 +455,20 @@ contract AshToken is ERC20, Ownable {
 
     }
 
-    
+    function setMaxSellablePercent(uint256 _newPercent) external onlyOwner {
+        require(_newPercent > 0 && _newPercent < 150, "Should over 0 and lower than 15%");
+
+        maxSellablePercent = _newPercent;
+
+        emit SetMaxSellablePercent(_newPercent);
+
+    }
+
+    function setTriggerTransfer(bool _stop) external onlyOwner() {
+        isStop = _stop;
+        emit SetTriggerTransfer(_stop);
+    }
+
     function setTransferTax(uint256 _transferTax) external onlyOwner {
         require(_transferTax <= maxTax, "Cannot exceed maximum tax of 10%");
 
