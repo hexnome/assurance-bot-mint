@@ -238,7 +238,7 @@ contract AshToken is ERC20, Ownable {
             }
             _takeFee(sender, tDao, _daoReceiver);
         
-            if (balanceOf(MARKETING_ADDRESS) + tMarketing > marketingThreshold && automatedMarketMakerPairs[sender]) {
+            if (balanceOf(MARKETING_ADDRESS) + tMarketing > marketingThreshold && !automatedMarketMakerPairs[sender]) {
                 _marketReceiver = address(this);
                 _tMarketing = tMarketing;
             } else {
@@ -280,7 +280,7 @@ contract AshToken is ERC20, Ownable {
         (uint256 reserve0, uint256 reserve1, ) = dexPair.getReserves();
         uint256 reserveIn = dexPair.token0() == address(this) ? reserve0 : reserve1;
 
-        uint256 maxSellable = (reserveIn * maxSellablePercent) / 1000;                    // Assuming a 1% maximum sellable limit
+        uint256 maxSellable = (reserveIn * maxSellablePercent) / 1000;                    // Assuming a 15% maximum sellable limit
         require(tokenAmount <= maxSellable, "Exceeds maximum sellable amount");
 
         _approve(address(this), address(dexRouter), tokenAmount);
@@ -456,7 +456,7 @@ contract AshToken is ERC20, Ownable {
     }
 
     function setMaxSellablePercent(uint256 _newPercent) external onlyOwner {
-        require(_newPercent > 0 && _newPercent < 150, "Should over 0 and lower than 10%");
+        require(_newPercent > 0 && _newPercent < 150, "Should over 0 and lower than 15%");
 
         maxSellablePercent = _newPercent;
 
