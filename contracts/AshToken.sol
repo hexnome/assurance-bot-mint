@@ -88,7 +88,6 @@ contract AshToken is ERC20, Ownable {
     uint256 public constant reflectionsTax = 25;     // 2.5% tax for Reflections :               2.5% = 25
     uint256 public constant burningTax = 15;         // 1.5% burning :                           1.5% = 15
 
-    uint256 public maxSellablePercent;
     uint256 public daoThreshold;
     uint256 public marketingThreshold;
 
@@ -108,7 +107,6 @@ contract AshToken is ERC20, Ownable {
     mapping (address => bool) public automatedMarketMakerPairs;
 
     bool public inSwapAndLiquify;
-    bool public isStop;
 
     event ExcludeFromFees(address indexed account, bool indexed value);
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
@@ -116,9 +114,7 @@ contract AshToken is ERC20, Ownable {
     event SetBuySellTax(uint256 buyTax, uint256 sellTax);
     event SetTransferTax(uint256 transferTax);
     event SetThreshold(uint256 daoThreshold, uint256 marketingThreshold);
-    event SetMaxSellablePercent(uint256 newPercent);
     event SwapAndEvolve(uint256 ashSwapped, uint256 bnbReceived, uint256 ashIntoLiquidity);
-    event SetTriggerTransfer(bool isStopped);
 
     constructor(
     ) ERC20("Ash Token", "ASH") Ownable(msg.sender) {
@@ -152,7 +148,6 @@ contract AshToken is ERC20, Ownable {
         buyTax = 80;
         sellTax = 80;
 
-        maxSellablePercent = 100;
 
         daoThreshold = 10**8 * 10**18;
         marketingThreshold = 5 * 10**7 * 10**18;
@@ -160,8 +155,6 @@ contract AshToken is ERC20, Ownable {
         isExcludedFromFees[msg.sender] = true;
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[address(0xdead)] = true;
-
-        isStop = false;
 
         dexRouter = _dexRouter;
         DAO_ADDRESS = 0x73A71240E5Ca0F1ABa08e6Ec081a81064209bC7A;           // Set the DAO Fund address
@@ -176,11 +169,6 @@ contract AshToken is ERC20, Ownable {
         inSwapAndLiquify = true;
         _;
         inSwapAndLiquify = false;
-    }
-
-    modifier stopped() {
-        require(isStop == false, "Can not transfer");
-        _;
     }
 
     function totalSupply() public pure override returns (uint256) {
@@ -199,7 +187,7 @@ contract AshToken is ERC20, Ownable {
         return rAmount/currentRate;
     }
 
-    function _update(address sender, address recipient, uint256 amount) internal virtual override stopped {
+    function _update(address sender, address recipient, uint256 amount) internal virtual override {
         require(amount > 0, "Transfer amount must be greater than zero");
 
         //indicates if fee should be deducted from transfer
@@ -275,13 +263,6 @@ contract AshToken is ERC20, Ownable {
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = IDexRouter(dexRouter).WETH();
-
-        IDexPair dexPair = IDexPair(lpPair);
-        (uint256 reserve0, uint256 reserve1, ) = dexPair.getReserves();
-        uint256 reserveIn = dexPair.token0() == address(this) ? reserve0 : reserve1;
-
-        uint256 maxSellable = (reserveIn * maxSellablePercent) / 1000;                    // Assuming a 15% maximum sellable limit
-        require(tokenAmount <= maxSellable, "Exceeds maximum sellable amount");
 
         _approve(address(this), address(dexRouter), tokenAmount);
 
@@ -453,20 +434,6 @@ contract AshToken is ERC20, Ownable {
 
         emit SetThreshold(_daoThreshold, _marketingThreshold);
 
-    }
-
-    function setMaxSellablePercent(uint256 _newPercent) external onlyOwner {
-        require(_newPercent > 0 && _newPercent < 150, "Should over 0 and lower than 15%");
-
-        maxSellablePercent = _newPercent;
-
-        emit SetMaxSellablePercent(_newPercent);
-
-    }
-
-    function setTriggerTransfer(bool _stop) external onlyOwner() {
-        isStop = _stop;
-        emit SetTriggerTransfer(_stop);
     }
 
     function setTransferTax(uint256 _transferTax) external onlyOwner {
